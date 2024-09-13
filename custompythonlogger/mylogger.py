@@ -5,10 +5,11 @@ import atexit
 import datetime as dt
 import json
 import sys
-import logging
+# import logging
+import logging.config
+import logging.handlers
 from typing import override
 
-__all__ = ['setup_logging', 'log']
 
 LOG_RECORD_BUILTIN_ATTRS = {
     "args",
@@ -42,6 +43,15 @@ class UTF8StreamHandler(logging.StreamHandler):
             stream = sys.stdout
         super().__init__(stream=stream)
         self.stream = open(stream.fileno(), 'w', encoding='utf-8', buffering=1)
+
+# class UTF8StreamHandler(logging.StreamHandler):
+#     def __init__(self, stream=None):
+#         super().__init__(stream=stream)
+#         if stream is None:
+#             stream = sys.stdout
+#         # Remove the fileno part and use the stream directly.
+#         self.stream = stream
+
 
 class MyJSONFormatter(logging.Formatter):
     def __init__(
@@ -89,29 +99,71 @@ class NonErrorFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:
         return record.levelno <= logging.INFO
 
-def setup_logging(config = None):
-    """ :config: json file path """
-    
-    if not config:
-        # si aucun fichier config n'est précisé, 
-        # utiliser le fichier dans le dossier config
-        config = Path(__file__).resolve().parent / 'config' / 'logging.json'
-    
-    with open(config, 'r') as f_in:
-        config = json.load(f_in)
+
+class SetupLogging:
+    '''
+    :config_path: json configuration file. See samples in ./config
+    :log_dir: output logs
+    The Json file needs to match the functions and classes of this module
+    '''
+    def __init__(self, config_path = None, log_dir = None):
+        self.config_path = config_path
+        self.log_dir = log_dir
+
+        self.cwd = Path(__file__).resolve().parent
+
+        if not self.config_path:
+            self.config_path =  self.cwd / 'logging.json'
+        print(f"log config path: {self.config_path}")
+
+        if not self.log_dir:
+            self.log_dir = self.cwd.parent / 'logs'
+            self.log_dir.mkdir(parents=True, exist_ok=True)
+        print(f"log output directory: {self.log_dir}")
+
+        self.log = logging.getLogger()
+        self._setup()
         
-    logging.config.dictConfig(config)
+        self.set_loglevel()
 
-    queue_handler = logging.getHandlerByName("queue_handler")
-    if queue_handler is not None:
-        queue_handler.listener.start()
-        atexit.register(queue_handler.listener.stop)
 
-if __name__ == "__main__":
+    def set_loglevel(self, level:str='DEBUG'):
+        """ :level: ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] """                
+        pass
+        # Not possible yet
+        # otherwise the log level is configurable in the logging file
 
-    # create the logger
-    log = logging.getLogger()
+
+    def _setup(self):
+        """ :config: json file path """
+
+        with open(self.config_path, 'r') as f:
+            config = json.load(f)
+        try:
+            logging.config.dictConfig(config)
+        except ValueError as err:
+            print(f"ValueError: {err}. The json config file has mistakes. Check referenced files path...")
+
+        queue_handler = logging.getHandlerByName("queue_handler")
+        if queue_handler is not None:
+            queue_handler.listener.start()
+            atexit.register(queue_handler.listener.stop)
+
+
+if __name__ == '__main__':
+    # use it like this
+    mylogger = SetupLogging()
+    log = mylogger.log
     
-    # level can be overwritten
-    logging.basicConfig(level="DEGUG")
-
+    print('test')
+    log.debug("test")
+    log.info("test")
+    log.warning("test")
+    log.error("test")
+    log.critical("test")
+    try:
+        1 / 0
+    except ZeroDivisionError:
+        log.exception("exception message")
+        
+        
