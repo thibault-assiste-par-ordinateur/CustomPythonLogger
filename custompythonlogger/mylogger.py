@@ -89,8 +89,8 @@ class NonErrorFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:
         return record.levelno <= logging.INFO
 
-def setup_logging(config: None):
-    """ :config: au format json """
+def setup_logging(config = None):
+    """ :config: json file path """
     
     if not config:
         # si aucun fichier config n'est précisé, 
@@ -109,7 +109,7 @@ def setup_logging(config: None):
 
 if __name__ == "__main__":
 
-    # create the logger    
+    # create the logger
     log = logging.getLogger()
     
     # level can be overwritten
