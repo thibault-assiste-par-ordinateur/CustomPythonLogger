@@ -89,7 +89,6 @@ class NonErrorFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:
         return record.levelno <= logging.INFO
 
-
 def setup_logging(config: None):
     """ :config: au format json """
     
@@ -108,4 +107,11 @@ def setup_logging(config: None):
         queue_handler.listener.start()
         atexit.register(queue_handler.listener.stop)
 
-log = logging.getLogger()
+if __name__ == "__main__":
+
+    # create the logger    
+    log = logging.getLogger()
+    
+    # level can be overwritten
+    logging.basicConfig(level="DEGUG")
+
