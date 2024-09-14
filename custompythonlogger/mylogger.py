@@ -8,6 +8,7 @@ import sys
 import logging.config
 import logging.handlers
 from typing import override
+# import importlib.resources as pkg_resources
 
 __all__ = ['SetupLogging', 'DisplayJsonLogs']
 
@@ -129,9 +130,14 @@ class SetupLogging:
         if not path:
             parent_dir = Path(__file__).resolve().parent.parent
             path =  parent_dir / 'config' / 'logging.json'
+            # with pkg_resources.open_text('custompythonlogger.config', 'logging.json') as f:
+            #     logging_config = f.read()
+            #     print(logging_config)
         print(f"log config path: {path}")
         return path
+    
 
+        
     def set_loglevel(self, level: str = 'INFO'):
         """Set the logging level for the stdout handler.
         :param level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
@@ -222,13 +228,15 @@ class DisplayJsonLogs:
 
 
 if __name__ == '__main__':
-    # use it like this
+    # USE IT LIKE THIS
+    
+    # 1. create custom logging.
     output_logs = Path(__file__).resolve().parent.parent / 'logs' / 'test.jsonl'
     mylogger = SetupLogging(output_logs)
     log = mylogger.log
-    
     mylogger.set_loglevel('DEBUG')
     
+    # 2. log methods
     print('*'*50)
     log.debug("test")
     log.info("test")
@@ -240,6 +248,7 @@ if __name__ == '__main__':
     except ZeroDivisionError:
         log.exception("exception message")
 
+    # 3. display logs stored as "jsonl"
     jsonl = DisplayJsonLogs(output_logs)
     jsonl.display('WARNING')
 
