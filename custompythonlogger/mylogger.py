@@ -8,7 +8,7 @@ import sys
 import logging.config
 import logging.handlers
 from typing import override
-# import importlib.resources as pkg_resources
+import importlib.resources as pkg_resources
 
 __all__ = ['SetupLogging', 'DisplayJsonLogs']
 
@@ -99,13 +99,17 @@ class NonErrorFilter(logging.Filter):
 class SetupLogging:
     '''
     Custom logging from json file. The configuration is very specific. Check the json sample in ../config/logging.json
-    :param log_dir: required file path to output the log files.
-    :param config_path: (optional) json configuration file for logging. A default configuration is provided in ../config. It can be overwritten passing a new path. In such a case, note that the Json file needs to match the functions and classes of this module
+    :param output_dir: required file path to output the log files.
+    :param json_config: json string, containing configuration for logging. A default configuration is provided in ../config. It can be overwritten passing a new path. In such a case, note that the Json file needs to match the functions and classes of this module
     '''
-    def __init__(self, output_path:str, config_path:str = None):
+    
+    default_logging_filename = "logging.json"
+    default_config_module = "custompythonlogger.config"
+    
+    def __init__(self, output_path:str, json_config:str = None):
         
         self.log = logging.getLogger()
-        self.config_path = self._init_config_path(config_path)        
+        self.config = self._init_config_path(json_config)        
         self.queue_handler = self._setup()
 
         self.output_path = self._init_output_path(output_path)
@@ -125,19 +129,20 @@ class SetupLogging:
                 path.parent.mkdir(parents=True, exist_ok=True)
         return path
 
-    def _init_config_path(self, path):
-        """ If the user did not specify a config path, use default one"""
-        if not path:
-            parent_dir = Path(__file__).resolve().parent.parent
-            path =  parent_dir / 'config' / 'logging.json'
-            # with pkg_resources.open_text('custompythonlogger.config', 'logging.json') as f:
-            #     logging_config = f.read()
-            #     print(logging_config)
-        print(f"log config path: {path}")
-        return path
-    
 
-        
+    def _init_config_path(self, json_config):
+        """ 
+        If the user did not specify a json config, use default one
+        In such a case, the file is loaded from the package with urllib 
+        (which does not work with paths but packages names)
+        """
+        if not json_config:
+            # Access the default logging config file from the package
+            json_config = pkg_resources.files(self.default_config_module) / self.default_logging_filename
+            with json_config.open('r', encoding='utf-8') as f:
+                return json.loads(f.read())
+        return json_config
+
     def set_loglevel(self, level: str = 'INFO'):
         """Set the logging level for the stdout handler.
         :param level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
@@ -177,11 +182,8 @@ class SetupLogging:
 
     def _setup(self):
         """ :config: json file path """
-
-        with open(self.config_path, 'r') as f:
-            config = json.load(f)
         try:
-            logging.config.dictConfig(config)
+            logging.config.dictConfig(self.config)
         except ValueError as err:
             print(f"ValueError: {err}. The json config file has mistakes. Check referenced files path...")
 
@@ -228,27 +230,4 @@ class DisplayJsonLogs:
 
 
 if __name__ == '__main__':
-    # USE IT LIKE THIS
-    
-    # 1. create custom logging.
-    output_logs = Path(__file__).resolve().parent.parent / 'logs' / 'test.jsonl'
-    mylogger = SetupLogging(output_logs)
-    log = mylogger.log
-    mylogger.set_loglevel('DEBUG')
-    
-    # 2. log methods
-    print('*'*50)
-    log.debug("test")
-    log.info("test")
-    log.warning("test")
-    log.error("test")
-    log.critical("test")
-    try:
-        1 / 0
-    except ZeroDivisionError:
-        log.exception("exception message")
-
-    # 3. display logs stored as "jsonl"
-    jsonl = DisplayJsonLogs(output_logs)
-    jsonl.display('WARNING')
-
+    pass
