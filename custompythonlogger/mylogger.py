@@ -12,8 +12,6 @@ import importlib.resources as pkg_resources
 
 __all__ = ['SetupLogging', 'DisplayJsonLogs']
 
-LEVELS = {"DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
-
 LOG_RECORD_BUILTIN_ATTRS = {
     "args",
     "asctime",
@@ -99,7 +97,7 @@ class NonErrorFilter(logging.Filter):
 class SetupLogging:
     '''
     Custom logging from json file. The configuration is very specific. Check the json sample in ../config/logging.json
-    :param output_dir: required file path to output the log files.
+    :param output_dir: file path to output the log files. Defaults to /logs/log.jsonl in the parent dir of the started script. 
     :param json_config: json string, containing configuration for logging. A default configuration is provided in ../config. It can be overwritten passing a new path. In such a case, note that the Json file needs to match the functions and classes of this module
     '''
     
@@ -127,6 +125,7 @@ class SetupLogging:
         numeric_level = getattr(logging, level.upper(), None)
         if not isinstance(numeric_level, int):
             raise ValueError(f"Invalid log level: {level}")
+        
         # Set level
         self.stdout_handler.setLevel(numeric_level)
         print(f"Updated stdout handler log level to: {level}")
@@ -212,7 +211,9 @@ class SetupLogging:
 
 
 class DisplayJsonLogs:
-    """ Display file in a .jsonl in a more readable manner """
+    """ Display file in a .jsonl in a more readable manner 
+        :param log_file_path: input .jsonl file to read and display
+    """
     
     def __init__(self, log_file_path:str):
         self.log_path = Path(log_file_path)
@@ -223,7 +224,9 @@ class DisplayJsonLogs:
         """ Reads and pretty-prints the JSON log file, filtering by log level."""
 
         # Mapping of log levels to numeric values
-        min_level_value = LEVELS.get(min_level.upper(), 10)
+        numeric_min_level = getattr(logging, min_level.upper(), None)
+        if not isinstance(numeric_min_level, int):
+            raise ValueError(f"Invalid log level: {min_level}")              
 
         if not self.log_path.exists():
             print(f"Log file not found for display: {self.log_path}")
@@ -235,11 +238,12 @@ class DisplayJsonLogs:
                     try:
                         log_entry = json.loads(line)
                         log_level = log_entry.get("level", "DEBUG")
-                        
+                        numeric_log_level = getattr(logging, log_level.upper(), None)
+
                         # Only print logs with level >= min_level
-                        if LEVELS.get(log_level.upper(), 0) >= min_level_value:
+                        if numeric_log_level >= numeric_min_level:
                             l = json.loads(line)
-                            output = f"[{l['level']}|{l['module']}|{l['function']}|{l['line']}] {l['message']}"
+                            output = f"[{l['level']}|{l['module']}|l.{l['line']}] {l['message']}"
                             print(output)
                     except json.JSONDecodeError:
                         print(f"Skipping invalid JSON line: {line}")
