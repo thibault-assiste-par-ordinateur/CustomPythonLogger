@@ -145,9 +145,9 @@ class SetupLogging:
             If not, creates the file and dir as mentionned in json config, in package root folder 
         """
         if not path:
-            main_dir = Path(sys.argv[0]).resolve().parent # dossier du script principal (relatif)
+            launched_script = Path(sys.argv[0]).resolve() # script initial
             filename_from_config = self.config['handlers']['file_json']['filename']
-            path = main_dir / filename_from_config
+            path = launched_script.parent.parent / filename_from_config # dossier parent du script principal
         else:
             # ensure file extension is .jsonl
             path = Path(path)
