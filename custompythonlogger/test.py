@@ -33,9 +33,9 @@ except ZeroDivisionError:
     log.exception("exception message")
 
 # display output logs
-launched_script = Path(sys.argv[0]).resolve()
-output_logs = launched_script.parent.parent / 'logs' / 'log.jsonl'
+root_script_path = Path(sys.argv[0]).resolve()
+output_logs = root_script_path.parent.parent / 'logs' / 'log.jsonl'
 print('*'*50)
 jsonl = DisplayJsonLogs(output_logs)
-jsonl.display('ERROR')
+jsonl.display('CRITICAL')
 

@@ -105,8 +105,11 @@ class SetupLogging:
     default_config_module = "custompythonlogger.config"
     
     def __init__(self, output_path:str = None, json_config:str = None):
-        logger_name = sys.argv[0].name
-        self.log = logging.getLogger(logger_name)
+        
+        self.root_script_path = Path(sys.argv[0]).resolve()
+        self.logger_name = self.root_script_path.name.stem # stem: supprime l'extension
+
+        self.log = logging.getLogger(self.logger_name)
         self.config = self._init_config_path(json_config)        
         self.queue_handler = self._setup()
 
@@ -144,9 +147,8 @@ class SetupLogging:
             If not, creates the file and dir as mentionned in json config, in package root folder 
         """
         if not path:
-            launched_script = Path(sys.argv[0]).resolve() # script initial
             filename_from_config = self.config['handlers']['file_json']['filename']
-            path = launched_script.parent.parent / filename_from_config # dossier parent du script principal
+            path = self.root_script_path.parent.parent / filename_from_config # dossier parent du script principal
         else:
             # ensure file extension is .jsonl
             path = Path(path)
