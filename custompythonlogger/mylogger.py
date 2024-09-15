@@ -105,8 +105,8 @@ class SetupLogging:
     default_config_module = "custompythonlogger.config"
     
     def __init__(self, output_path:str = None, json_config:str = None):
-        
-        self.log = logging.getLogger()
+        logger_name = sys.argv[0].name
+        self.log = logging.getLogger(logger_name)
         self.config = self._init_config_path(json_config)        
         self.queue_handler = self._setup()
 
