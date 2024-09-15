@@ -140,6 +140,38 @@ class SetupLogging:
         print(f"log output: {output_path}")
         
 
+    def _init_output_path(self, path):
+        """ Make sure the specified output path exists and has a .jsonl extension.
+            If not, creates the file and dir as mentionned in json config, in package root folder 
+        """
+        if not path:
+            filename_from_config = self.config['handlers']['file_json']['filename']
+            path = Path(__file__).resolve().parent.parent / filename_from_config
+        else:
+            # ensure file extension is .jsonl
+            path = Path(path)
+            if path.suffix != '.jsonl':
+                path.with_suffix('.jsonl')
+        # ensure the parent directories exist, if not create them
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+
+
+    def _init_config_path(self, json_config):
+        """ 
+        If the user did not specify a json config, use default one
+        In such a case, the file is loaded from the package with urllib 
+        (which does not work with paths but packages names)
+        """
+        if not json_config:
+            # Access the default logging config file from the package
+            json_config = pkg_resources.files(self.default_config_module) / self.default_logging_filename
+            with json_config.open('r', encoding='utf-8') as f:
+                return json.loads(f.read())
+        return json_config
+
+
     def _get_json_file_handler(self):
         """ Look for the json_file handler in all the handlers """
         if isinstance(self.queue_handler, logging.handlers.QueueHandler):
@@ -164,37 +196,6 @@ class SetupLogging:
             print("QueueHandler not found or not configured properly.")
 
 
-    def _init_output_path(self, path):
-        """ Make sure the specified output path exists and has a .jsonl extension"""
-        if not path:
-            path = Path(self.json_file_handler.baseFilename)
-        else:
-            # ensure file extension is .jsonl
-            path = Path(path)
-            if path.suffix != '.jsonl':
-                path.with_suffix('.jsonl')
-
-        # ensure the parent directories exist, if not create them
-        if not path.parent.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
-        return path
-
-
-    def _init_config_path(self, json_config):
-        """ 
-        If the user did not specify a json config, use default one
-        In such a case, the file is loaded from the package with urllib 
-        (which does not work with paths but packages names)
-        """
-        if not json_config:
-            # Access the default logging config file from the package
-            json_config = pkg_resources.files(self.default_config_module) / self.default_logging_filename
-            with json_config.open('r', encoding='utf-8') as f:
-                return json.loads(f.read())
-        return json_config
-
-
-        
     def _setup(self):
         """ :config: json file path """
         try:
