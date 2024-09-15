@@ -107,10 +107,12 @@ class SetupLogging:
     def __init__(self, output_path:str = None, json_config:str = None):
         
         self.root_script_path = Path(sys.argv[0]).resolve()
-        self.logger_name = self.root_script_path.name.stem # stem: supprime l'extension
+        root_script_parent_dir = self.root_script_path.parent.parent
+        self.logger_name = f"{root_script_parent_dir.name}.{self.root_script_path.stem}" # 'stem' affiche le nom du fichier sans l'extension, 'name' affiche le nom du dossier/fichier d'un path
+        print(f"logger name: {self.logger_name}")
 
         self.log = logging.getLogger(self.logger_name)
-        self.config = self._init_config_path(json_config)        
+        self.config = self._init_config_path(json_config)
         self.queue_handler = self._setup()
 
         self.json_file_handler = self._get_json_file_handler()
