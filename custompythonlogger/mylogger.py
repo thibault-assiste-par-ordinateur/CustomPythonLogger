@@ -114,7 +114,7 @@ class SetupLogging:
         self.stdout_handler = self._get_stdout_handler()
 
         self.output_path = self._init_output_path(output_path)
-        self._set_log_path( self.output_path )
+        self._set_output_path( self.output_path )
 
 
     def set_loglevel(self, level: str = 'INFO'):
@@ -131,7 +131,7 @@ class SetupLogging:
         print(f"Updated stdout handler log level to: {level}")
 
 
-    def _set_log_path(self, output_path: str):
+    def _set_output_path(self, output_path: str):
         """ Change the filename of the file_json handler (overwrites json config file) """
         self.json_file_handler.baseFilename = output_path
         self.json_file_handler.stream.close()  # Close the old file stream
@@ -167,8 +167,10 @@ class SetupLogging:
         if not json_config:
             # Access the default logging config file from the package
             json_config = pkg_resources.files(self.default_config_module) / self.default_logging_filename
+            print(f"log using default config file: {json_config}")
             with json_config.open('r', encoding='utf-8') as f:
                 return json.loads(f.read())
+        print(f"log using custom config file: {json_config}")
         return json_config
 
 
@@ -180,7 +182,7 @@ class SetupLogging:
                     return listener
             print("json_file handler not found or not configured properly. Check config.")        
         else: 
-            print('QueueHandler not found or not configured properly. Check config')
+            print('QueueHandler not found or not configured properly.')
         return None
 
 

@@ -1,7 +1,17 @@
 # -*- coding: utf-8 -*-
-from custompythonlogger.mylogger import SetupLogging, DisplayJsonLogs
-from pathlib import Path
+
 import sys
+from pathlib import Path
+
+# DIRTY FIX TO APPEND THE FOLDER AS A WORKING DIRECTORY (usefull for VSC code-runner)
+import os
+import sys
+cwd = os.getcwd()
+sys.path.append(cwd)
+print("Current working directory: {0}".format(cwd))
+
+
+from custompythonlogger.mylogger import SetupLogging, DisplayJsonLogs
 
 # setup logging
 mylogger = SetupLogging()
