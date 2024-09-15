@@ -133,7 +133,7 @@ class SetupLogging:
 
     def _set_output_path(self, output_path: str):
         """ Change the filename of the file_json handler (overwrites json config file) """
-        self.json_file_handler.baseFilename = output_path
+        self.json_file_handler.baseFilename = str(output_path) # necessary conversion
         self.json_file_handler.stream.close()  # Close the old file stream
         self.json_file_handler.stream = open(output_path, 'a', encoding='utf-8')  # Reopen with the new filename
         print(f"log output: {output_path}")
