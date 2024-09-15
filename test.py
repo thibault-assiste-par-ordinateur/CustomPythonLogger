@@ -2,8 +2,7 @@
 from custompythonlogger.mylogger import SetupLogging, DisplayJsonLogs
 from pathlib import Path
 
-output_logs = Path(__file__).resolve().parent / 'logs' / 'test.jsonl'
-mylogger = SetupLogging(output_logs)
+mylogger = SetupLogging()
 log = mylogger.log
 
 mylogger.set_loglevel('DEBUG')
@@ -19,6 +18,7 @@ try:
 except ZeroDivisionError:
     log.exception("exception message")
 
+output_logs = Path(__file__).resolve().parent / 'logs' / 'log.jsonl'
 jsonl = DisplayJsonLogs(output_logs)
 jsonl.display('WARNING')
 

@@ -106,27 +106,77 @@ class SetupLogging:
     default_logging_filename = "logging.json"
     default_config_module = "custompythonlogger.config"
     
-    def __init__(self, output_path:str, json_config:str = None):
+    def __init__(self, output_path:str = None, json_config:str = None):
         
         self.log = logging.getLogger()
         self.config = self._init_config_path(json_config)        
         self.queue_handler = self._setup()
 
+        self.json_file_handler = self._get_json_file_handler()
+        self.stdout_handler = self._get_stdout_handler()
+
         self.output_path = self._init_output_path(output_path)
-        self.set_logfile( self.output_path )
+        self._set_log_path( self.output_path )
+
+
+    def set_loglevel(self, level: str = 'INFO'):
+        """Set the logging level for the stdout handler.
+        :param level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+        """
+        # Convert the level string to logging level value
+        numeric_level = getattr(logging, level.upper(), None)
+        if not isinstance(numeric_level, int):
+            raise ValueError(f"Invalid log level: {level}")
+        # Set level
+        self.stdout_handler.setLevel(numeric_level)
+        print(f"Updated stdout handler log level to: {level}")
+
+
+    def _set_log_path(self, output_path: str):
+        """ Change the filename of the file_json handler (overwrites json config file) """
+        self.json_file_handler.baseFilename = output_path
+        self.json_file_handler.stream.close()  # Close the old file stream
+        self.json_file_handler.stream = open(output_path, 'a', encoding='utf-8')  # Reopen with the new filename
+        print(f"log output: {output_path}")
+        
+
+    def _get_json_file_handler(self):
+        """ Look for the json_file handler in all the handlers """
+        if isinstance(self.queue_handler, logging.handlers.QueueHandler):
+            for listener in self.queue_handler.listener.handlers:
+                if isinstance(listener, logging.handlers.RotatingFileHandler):
+                    return listener
+            print("json_file handler not found or not configured properly. Check config.")        
+        else: 
+            print('QueueHandler not found or not configured properly. Check config')
+        return None
+
+
+    def _get_stdout_handler(self):
+        """ Look for the stream handler stdout in all the handlers """
+        if isinstance(self.queue_handler, logging.handlers.QueueHandler):
+            # Access the handlers managed by the QueueListener
+            for listener in self.queue_handler.listener.handlers:
+                if isinstance(listener, UTF8StreamHandler) and listener.stream.name == 1: # stdout is 1, stderr is 2 
+                    return listener
+            print("stdout stream handler not found or not configured properly. Check config.")        
+        else:
+            print("QueueHandler not found or not configured properly.")
+
 
     def _init_output_path(self, path):
         """ Make sure the specified output path exists and has a .jsonl extension"""
         if not path:
-            print("WARNING: wrong log file output.")
+            path = Path(self.json_file_handler.baseFilename)
         else:
-            path = Path(path)
             # ensure file extension is .jsonl
+            path = Path(path)
             if path.suffix != '.jsonl':
                 path.with_suffix('.jsonl')
-            # ensure the parent directories exist, if not create them
-            if not path.parent.exists():
-                path.parent.mkdir(parents=True, exist_ok=True)
+
+        # ensure the parent directories exist, if not create them
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
         return path
 
 
@@ -143,43 +193,8 @@ class SetupLogging:
                 return json.loads(f.read())
         return json_config
 
-    def set_loglevel(self, level: str = 'INFO'):
-        """Set the logging level for the stdout handler.
-        :param level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
-        """
-        # Convert the level string to logging level value
-        numeric_level = getattr(logging, level.upper(), None)
-        if not isinstance(numeric_level, int):
-            raise ValueError(f"Invalid log level: {level}")
 
-        if isinstance(self.queue_handler, logging.handlers.QueueHandler):
-            # Access the handlers managed by the QueueListener
-            for listener in self.queue_handler.listener.handlers:
-                if isinstance(listener, UTF8StreamHandler) and listener.stream.name == 1: # stdout is 1, stderr is 2 
-                    # Set the new log level for the stdout handler
-                    listener.setLevel(numeric_level)
-                    print(f"Updated stdout handler log level to: {level}")
-                    break
-        else:
-            print("QueueHandler not found or not configured properly.")
-
-    def set_logfile(self, output_path: str):
-        """ Change the filename of the file_json handler (overwrites json config file) """
         
-        # Iterate through all handlers and find file_json handler
-        if isinstance(self.queue_handler, logging.handlers.QueueHandler):
-            for listener in self.queue_handler.listener.handlers:
-                if isinstance(listener, logging.handlers.RotatingFileHandler):
-                    # Update the filename attribute
-                    old_filename = listener.baseFilename
-                    listener.baseFilename = output_path
-                    listener.stream.close()  # Close the old file stream
-                    listener.stream = open(output_path, 'a', encoding='utf-8')  # Reopen with the new filename
-                    print(f"log files: {output_path}")
-                    break
-            else:
-                print("file_json handler not found.")
-
     def _setup(self):
         """ :config: json file path """
         try:
@@ -193,13 +208,14 @@ class SetupLogging:
             atexit.register(queue_handler.listener.stop)
         return queue_handler
 
+
 class DisplayJsonLogs:
     """ Display file in a .jsonl in a more readable manner """
     
     def __init__(self, log_file_path:str):
         self.log_path = Path(log_file_path)
         if not self.log_path.exists():
-            print(f"Log file not found: {self.log_path}")
+            print(f"Log file not found for display: {self.log_path}")
     
     def display(self, min_level:str='DEBUG'):
         """ Reads and pretty-prints the JSON log file, filtering by log level."""
@@ -208,7 +224,7 @@ class DisplayJsonLogs:
         min_level_value = LEVELS.get(min_level.upper(), 10)
 
         if not self.log_path.exists():
-            print(f"Log file not found: {self.log_path}")
+            print(f"Log file not found for display: {self.log_path}")
             return
 
         try:
@@ -231,3 +247,43 @@ class DisplayJsonLogs:
 
 if __name__ == '__main__':
     pass
+
+
+
+
+    # def set_loglevel(self, level: str = 'INFO'):
+    #     """Set the logging level for the stdout handler.
+    #     :param level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+    #     """
+    #     # Convert the level string to logging level value
+    #     numeric_level = getattr(logging, level.upper(), None)
+    #     if not isinstance(numeric_level, int):
+    #         raise ValueError(f"Invalid log level: {level}")
+
+    #     if isinstance(self.queue_handler, logging.handlers.QueueHandler):
+    #         # Access the handlers managed by the QueueListener
+    #         for listener in self.queue_handler.listener.handlers:
+    #             if isinstance(listener, UTF8StreamHandler) and listener.stream.name == 1: # stdout is 1, stderr is 2 
+    #                 # Set the new log level for the stdout handler
+    #                 listener.setLevel(numeric_level)
+    #                 print(f"Updated stdout handler log level to: {level}")
+    #                 break
+    #     else:
+    #         print("QueueHandler not found or not configured properly.")
+
+
+    # def set_log_path(self, output_path: str):
+    #     """ Change the filename of the file_json handler (overwrites json config file) """
+        
+    #     if isinstance(self.queue_handler, logging.handlers.QueueHandler):
+    #         # Iterate through all handlers and find file_json handler
+    #         for listener in self.queue_handler.listener.handlers:
+    #             if isinstance(listener, logging.handlers.RotatingFileHandler):
+    #                 # Update the filename attribute
+    #                 listener.baseFilename = output_path
+    #                 listener.stream.close()  # Close the old file stream
+    #                 listener.stream = open(output_path, 'a', encoding='utf-8')  # Reopen with the new filename
+    #                 print(f"log output: {output_path}")
+    #                 break
+    #         else:
+    #             print("file_json handler not found.")

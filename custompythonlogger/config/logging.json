@@ -46,7 +46,7 @@
       "class": "logging.handlers.RotatingFileHandler",
       "level": "DEBUG",
       "formatter": "json",
-      "filename": "logs/testinglog.jsonl",
+      "filename": "logs/log.jsonl",
       "maxBytes": 100000,
       "backupCount": 2,
       "encoding": "utf-8"
