@@ -10,7 +10,6 @@ cwd = os.getcwd()
 sys.path.append(cwd)
 print("Current working directory: {0}".format(cwd))
 
-
 from custompythonlogger.mylogger import SetupLogging, DisplayJsonLogs
 
 # setup logging

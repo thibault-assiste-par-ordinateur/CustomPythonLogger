@@ -5,6 +5,8 @@ import atexit
 import datetime as dt
 import json
 import sys
+import queue
+#import logging
 import logging.config
 import logging.handlers
 #from typing import override # the 'override' decorator is python3.12 specific 
@@ -201,18 +203,6 @@ class SetupLogging:
         else:
             print("QueueHandler not found or not configured properly.")
 
-
-    def _get_handler_by_name(self, handler_name):
-        """
-        Find the handler by name in the logger.
-        :param handler_name: Name of the handler (e.g., 'queue_handler')
-        :return: Logging handler object or None if not found.
-        """
-        for handler in self.log.handlers:
-            if handler.get_name() == handler_name:
-                return handler
-        return None
-
     
     def _setup(self):
         """ :config: json file path """
@@ -220,8 +210,9 @@ class SetupLogging:
             logging.config.dictConfig(self.config)
         except ValueError as err:
             print(f"ValueError: {err}. The json config file has mistakes. Check referenced files path...")
-
-        queue_handler = self._get_handler_by_name("queue_handler")
+            raise
+        
+        queue_handler = logging.getHandlerByName("queue_handler")
         if queue_handler is not None:
             queue_handler.listener.start()
             atexit.register(queue_handler.listener.stop)
