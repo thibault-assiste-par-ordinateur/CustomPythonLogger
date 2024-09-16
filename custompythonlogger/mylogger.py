@@ -7,7 +7,7 @@ import json
 import sys
 import logging.config
 import logging.handlers
-from typing import override
+#from typing import override # the 'override' decorator is python3.12 specific 
 import importlib.resources as pkg_resources
 
 __all__ = ['SetupLogging', 'DisplayJsonLogs']
@@ -56,7 +56,7 @@ class MyJSONFormatter(logging.Formatter):
         super().__init__()
         self.fmt_keys = fmt_keys if fmt_keys is not None else {}
 
-    @override
+    #@override # typing new function in python 3.12, only here to INDICATE the below method got ovewritten from its base class. I am not using it since it is python3.12 specific.
     def format(self, record: logging.LogRecord) -> str:
         message = self._prepare_log_dict(record)
         return json.dumps(message, ensure_ascii=False, default=str)
