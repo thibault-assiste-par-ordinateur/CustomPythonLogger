@@ -90,7 +90,7 @@ class MyJSONFormatter(logging.Formatter):
 
 class NonErrorFilter(logging.Filter):
     """ Do not display non error messages twice in stdout"""
-    @override
+    #@override # typing new function in python 3.12, only here to INDICATE the below method got ovewritten from its base class. I am not using it since it is python3.12 specific.
     def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:
         return record.levelno <= logging.INFO
 
