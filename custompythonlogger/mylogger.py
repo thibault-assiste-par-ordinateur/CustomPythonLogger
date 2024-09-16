@@ -202,6 +202,18 @@ class SetupLogging:
             print("QueueHandler not found or not configured properly.")
 
 
+    def _get_handler_by_name(self, handler_name):
+        """
+        Find the handler by name in the logger.
+        :param handler_name: Name of the handler (e.g., 'queue_handler')
+        :return: Logging handler object or None if not found.
+        """
+        for handler in self.log.handlers:
+            if handler.get_name() == handler_name:
+                return handler
+        return None
+
+    
     def _setup(self):
         """ :config: json file path """
         try:
@@ -209,7 +221,7 @@ class SetupLogging:
         except ValueError as err:
             print(f"ValueError: {err}. The json config file has mistakes. Check referenced files path...")
 
-        queue_handler = logging.getHandlerByName("queue_handler")
+        queue_handler = self._get_handler_by_name("queue_handler")
         if queue_handler is not None:
             queue_handler.listener.start()
             atexit.register(queue_handler.listener.stop)
